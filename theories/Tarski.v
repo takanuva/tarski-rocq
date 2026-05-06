@@ -150,14 +150,14 @@ Section Family.
     forall c: CODE,
     forall H: U_pi = get_branch c,
     forall T: Set,
-    right_type (left_child c H) T ->
+    forall X: right_type (left_child c H) T,
     forall x: T, CODE.
   Proof.
     intros.
     destruct c.
     destruct ok; try easy.
     simpl in *.
-    set (y := cast H0 x).
+    set (y := cast X x).
     exact (squash (b y) (ok_b y)).
   Defined.
 
