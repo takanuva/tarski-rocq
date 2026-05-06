@@ -1,0 +1,4 @@
+-Q theories Local -arg -impredicative-set
+
+theories/InductionRecursion.v
+theories/Tarski.v
