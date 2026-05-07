@@ -177,6 +177,10 @@ Section Family.
       forall a H, c = shrink a H -> T = REC a
   }.
 
+  (* We also have a small transport function, cast, that says that if T is the
+     right type for (shrink a ok), and we have a T, we also have a REC a, by
+     properly specializing the injectivity assumption to reflexivity. *)
+
   Definition cast:
     forall a: IND,
     forall ok: canonical a,
@@ -518,7 +522,7 @@ Structure universe: Type := universe_mk {
 
 Coercion uni_code: universe >-> Sortclass.
 
-(* We also say that an universe U is a subtype of an universe V if:
+(* We also say that a universe U is a subtype of a universe V if:
    - there's a code SUB in V such that T SUB = U;
    - for any code x in U, there's a code EMB x in V such that T (EMB x) = T x.
 
@@ -571,8 +575,8 @@ Local Definition A (n: nat): Set :=
 Local Definition B (n: nat): A n -> Set :=
   projT2 (FAM n).
 
-(* For every natural number n, there's an universe U n over the family (A n) and
-   (B n). Also, there's an universe Uw that includes codes for any universe U n,
+(* For every natural number n, there's a universe U n over the family (A n) and
+   (B n). Also, there's a universe Uw that includes codes for any universe U n,
    for any n. Note that (U n: Set) = A (1 + n). *)
 
 Definition U (n: nat): universe :=

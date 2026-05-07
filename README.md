@@ -7,19 +7,20 @@
 
 There is a problem: Rocq doesn't support [induction-recursion][wikipedia] as
 Agda does. This has often been a problem for formalizing dependent type theories
-in it, where users tend to compromise and [avoid an universe hierarchy][mctt].
+in it, where users tend to compromise and [avoid a universe hierarchy][mctt].
 While it is known that small induction-recursion (the case where the codomain of
 the recursive function is smaller than the inductive type!) [may be
 encoded][hancock] in Rocq, this doesn't allow us to construct the canonical
 example of induction-recursion, universes. Or does it?
 
-This project contains an example encoding of _large_ induction-recursion in
-Rocq, properly deriving an hierarchy of `nat`-indexed internal Tarski universes
-in `Set`, by relying on a feature that in turn Agda doesn't have: an
-impredicative `Set`. The trick relies on defining the universe as a small
-inductive-recursive type, with the inductive part living in `Type`, _shrinking_
-it down using impredicativity to live in `Set`, leaking relevant small
-information, and proving that the squashing constructor is an isomorphism.
+This project shows that, despite current understanding, _large_
+induction-recursion in Rocq is actually possible, enabling for example the
+derivation of a hierarchy of `nat`-indexed internal Tarski universes, by relying
+on a feature that in turn Agda doesn't have: an impredicative `Set`. The trick
+relies on defining the universe as a small inductive-recursive type first, with
+the inductive part thus living in `Type`, _shrinking_ it down using
+impredicativity to live in `Set`, leaking enough relevant small information, and
+proving that the squashing constructor is an isomorphism.
 
 # Constructing large inductive-recursive types
 
@@ -30,19 +31,19 @@ following valid Agda definition over a family of sets `A` and `B`:
 
 ```agda
 postulate
-  A: Set
-  B: A -> Set
+  A : Set
+  B : A -> Set
 
 mutual
-  data CODE: Set where
-    NAT: CODE
-    PI: (a: CODE) -> (T a -> CODE) -> CODE
-    IDX: CODE
-    LFT: (a: A) -> CODE
+  data CODE : Set where
+    NAT : CODE
+    PI : (a : CODE) -> (T a -> CODE) -> CODE
+    IDX : CODE
+    LFT : (a : A) -> CODE
 
-  T: CODE -> Set
-  T NAT = Nat
-  T (PI a b) = (x: T a) -> T (b x)
+  T : CODE -> Set
+  T NAT = ℕ
+  T (PI a b) = (x : T a) -> T (b x)
   T IDX = A
   T (LFT a) = B a
 ```
@@ -68,8 +69,7 @@ with T: CODE -> Set :=
 ```
 
 (Please note that while it should be possible to derive the induction principle
-for `CODE`, this has not yet been done in this repository, sorry! TODO, I
-guess?)
+for `CODE`, this has not yet been done in this repository, sorry!)
 
 We take the following steps in order to construct this type:
 
@@ -162,12 +162,12 @@ Which means that `Uw` contains codes for `U n` for all `n`, as well as codes for
 their types. We would expect that, for example, this could be used for defining
 a category with families model of some type theory, by having types and terms
 live in something akin to `Uw`. We do not define a _superuniverse_ (as described
-by Dybjer and Palmgren), that is, an universe closed under universe construction
+by Dybjer and Palmgren), that is, a universe closed under universe construction
 itself, but this should be a simple extension. In fact, `CODE` could be
 abstracted over a family of type constructors, such that, besides $\Pi$-types,
 one could also have $\Sigma$-types, $W$-types, and even $M$-types.
 
-# Drawbacks (beware of axioms!)
+# Assumptions (UIP and funext)
 
 The main ingredients for the construction were the impredicative `Set` and
 subsingleton elimination in `Prop`. However, the code also relies in both
