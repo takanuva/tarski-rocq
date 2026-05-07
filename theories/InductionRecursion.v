@@ -6,23 +6,36 @@ Set Universe Polymorphism.
 
 Section IR.
 
-  Universe u.
-  Context {O: Type@{u}}.
+  (* We will abstract the following code by the type O which is the result of
+     the recursive function. Note this whole file is universe polymorphic. *)
+
+  Context {O: Type}.
+
+  (* The general description of an inductive-recursive type:
+     - iota settles a constructor, informing the result of the recursive part;
+     - sigma adds a parameter for some small type into constructor, allowing us
+       to also branch on it if required; and
+     - delta adds a recursive subterm to the constructor. *)
 
   Inductive Sig: Type :=
     | iota (o: O)
     | sigma (A: Set) (K: A -> Sig): Sig
     | delta (A: Set) (K: (A -> O) -> Sig): Sig.
 
-  Fixpoint E (s: Sig) (X: Type) (H: X -> O): Type :=
-    match s return Type with
+  (* From a signature S: Sig, we may construct the inductive type, as E, and the
+     recursive part, as F. See Hancock et al.'s "Small Induction Recursion". We
+     mean to take X and H below as the family we're building itself: we need to
+     take the least fixpoint! *)
+
+  Fixpoint E (S: Sig) (X: Type) (H: X -> O): Type :=
+    match S return Type with
     | iota o => unit
     | sigma A K => { a: A & E (K a) X H }
     | delta A K => { f: A -> X & E (K (fun x => H (f x))) X H }
     end.
 
-  Fixpoint F (s: Sig) (X: Type) (H: X -> O): E s X H -> O :=
-    match s with
+  Fixpoint F (S: Sig) (X: Type) (H: X -> O): E S X H -> O :=
+    match S with
     | iota o =>
       fun x =>
         o
@@ -33,6 +46,8 @@ Section IR.
       fun x =>
         F (K (fun a => H (projT1 x a))) X H (projT2 x)
     end.
+
+  (* E and F form a functor, so there's a mapping action. *)
 
   Definition E_fmap:
     forall {X: Type},
@@ -70,6 +85,10 @@ Section IR.
       apply H0.
   Qed.
 
+  (* In order to build the functor, we need to keep constructing the inductive
+     part along with calculating the result. So we will pack those two elements
+     together and have a fiber state we have the right result. *)
+
   Definition total (X: O -> Type): Type :=
     { o: O & X o }.
 
@@ -88,12 +107,15 @@ Section IR.
   Definition fiber (X: Type) (p: X -> O) (o: O): Type :=
     { x: X | p x = o }.
 
-  (* The actual O-indexed functor induced by (E, F). *)
+  (* The actual O-indexed functor induced by (E, F), we call it E'. *)
+
   Definition E' (S: Sig): (O -> Type) -> (O -> Type) :=
     fun (X: O -> Type) o =>
       fiber
         (E S (total X) (@projT1 O X))
         (F S (total X) (@projT1 O X)) o.
+
+  (* As expected, E' S is a functor in Type/O. *)
 
   Definition E'_fmap:
     forall {X: O -> Type},
@@ -111,12 +133,20 @@ Section IR.
     assumption.
   Defined.
 
+  (* We note that E' S lives in Type. We now proceed as described by Wadler in
+     "Recursive Types for Free!", and make the impredicative encoding of the
+     least fixpoint. We define our functor G, its least fixpoint muE, and the
+     initial algebra (muE, inE). We need not to prove that it is initial.
+
+     Note: due to limitations on the elimination, it would be trickier to define
+     an operation outE: muE o -> G muE o. Luckly we don't need it. *)
+
   Variable S: Sig.
 
-  Local Definition G :=
+  Local Definition G: (O -> Type) -> (O -> Type) :=
     E' S.
 
-  Local Definition IN X :=
+  Local Definition IN (X: O -> Set): Set :=
     forall o, G X o -> X o.
 
   Definition muE: O -> Set :=
